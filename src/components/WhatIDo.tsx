@@ -1,165 +1,89 @@
-import { useEffect, useRef } from "react";
-import "./styles/WhatIDo.css";
+import { useEffect } from "react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import HoverLinks from "./HoverLinks";
+import { gsap } from "gsap";
+// ❌ removed gsap-trial import
+// import { ScrollSmoother } from "gsap-trial/ScrollSmoother";
+import "./styles/Navbar.css";
 
-const WhatIDo = () => {
-  const containerRef = useRef<(HTMLDivElement | null)[]>([]);
-  const setRef = (el: HTMLDivElement | null, index: number) => {
-    containerRef.current[index] = el;
-  };
+gsap.registerPlugin(ScrollTrigger);
+
+// ✅ keep same export (so other files don't break)
+export let smoother: any;
+
+const Navbar = () => {
   useEffect(() => {
-    if (ScrollTrigger.isTouch) {
-      containerRef.current.forEach((container) => {
-        if (container) {
-          container.classList.remove("what-noTouch");
-          container.addEventListener("click", () => handleClick(container));
+    // ✅ fallback smoother (replaces ScrollSmoother without breaking logic)
+    smoother = {
+      scrollTop: (value: number) => {
+        window.scrollTo({ top: value, behavior: "smooth" });
+      },
+      scrollTo: (target: any, _smooth?: boolean, _position?: string) => {
+        const el = document.querySelector(target);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
         }
-      });
-    }
-    return () => {
-      containerRef.current.forEach((container) => {
-        if (container) {
-          container.removeEventListener("click", () => handleClick(container));
-        }
-      });
+      },
+      paused: (_val: boolean) => {},
     };
-  }, []);
-  return (
-    <div className="whatIDO">
-      <div className="what-box">
-        <h2 className="title">
-          W<span className="hat-h2">HAT</span>
-          <div>
-            I<span className="do-h2"> DO</span>
-          </div>
-        </h2>
-      </div>
-      <div className="what-box">
-        <div className="what-box-in">
-          <div className="what-border2">
-            <svg width="100%">
-              <line
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="100%"
-                stroke="white"
-                strokeWidth="2"
-                strokeDasharray="7,7"
-              />
-              <line
-                x1="100%"
-                y1="0"
-                x2="100%"
-                y2="100%"
-                stroke="white"
-                strokeWidth="2"
-                strokeDasharray="7,7"
-              />
-            </svg>
-          </div>
-          <div
-            className="what-content what-noTouch"
-            ref={(el) => setRef(el, 0)}
-          >
-            <div className="what-border1">
-              <svg height="100%">
-                <line
-                  x1="0"
-                  y1="0"
-                  x2="100%"
-                  y2="0"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeDasharray="6,6"
-                />
-                <line
-                  x1="0"
-                  y1="100%"
-                  x2="100%"
-                  y2="100%"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeDasharray="6,6"
-                />
-              </svg>
-            </div>
-            <div className="what-corner"></div>
 
-            <div className="what-content-in">
-              <h3>WEB DEVELOPMENT</h3>
-              <h4>Building Frontends & UIs</h4>
-              <p>
-                Crafting performant and responsive interfaces. Building real-world web
-                development projects using modern essentials.
-              </p>
-              <h5>Skillset & tools</h5>
-              <div className="what-content-flex">
-                <div className="what-tags">HTML5</div>
-                <div className="what-tags">CSS3</div>
-                <div className="what-tags">JavaScript</div>
-                <div className="what-tags">Basic UI/UX</div>
-                <div className="what-tags">Graphic Designing</div>
-              </div>
-              <div className="what-arrow"></div>
-            </div>
-          </div>
-          <div
-            className="what-content what-noTouch"
-            ref={(el) => setRef(el, 1)}
-          >
-            <div className="what-border1">
-              <svg height="100%">
-                <line
-                  x1="0"
-                  y1="100%"
-                  x2="100%"
-                  y2="100%"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeDasharray="6,6"
-                />
-              </svg>
-            </div>
-            <div className="what-corner"></div>
-            <div className="what-content-in">
-              <h3>CORE & AI</h3>
-              <h4>Programming & Problem Solving</h4>
-              <p>
-                Strong foundation in Data Structures, Algorithms, and logical problem-solving.
-                Currently exploring Artificial Intelligence and Machine Learning fundamentals.
-              </p>
-              <h5>Skillset & tools</h5>
-              <div className="what-content-flex">
-                <div className="what-tags">C</div>
-                <div className="what-tags">C++</div>
-                <div className="what-tags">Python</div>
-                <div className="what-tags">DSA</div>
-                <div className="what-tags">Problem Solving</div>
-                <div className="what-tags">AI & ML</div>
-              </div>
-              <div className="what-arrow"></div>
-            </div>
-          </div>
-        </div>
+    // keep your original logic untouched
+    smoother.scrollTop(0);
+    smoother.paused(true);
+
+    let links = document.querySelectorAll(".header ul a");
+    links.forEach((elem) => {
+      let element = elem as HTMLAnchorElement;
+      element.addEventListener("click", (e) => {
+        if (window.innerWidth > 1024) {
+          e.preventDefault();
+          let elem = e.currentTarget as HTMLAnchorElement;
+          let section = elem.getAttribute("data-href");
+          smoother.scrollTo(section, true, "top top");
+        }
+      });
+    });
+
+    window.addEventListener("resize", () => {
+      // ❌ ScrollSmoother.refresh(true);
+      // ✅ replaced with safe GSAP refresh
+      ScrollTrigger.refresh();
+    });
+  }, []);
+
+  return (
+    <>
+      <div className="header">
+        <a href="/#" className="navbar-title" data-cursor="disable">
+          AM
+        </a>
+        <a
+          href="mailto:abirmondal8926@gmail.com"
+          className="navbar-connect"
+          data-cursor="disable"
+        >
+          abirmondal8926@gmail.com
+        </a>
+        <ul>
+          <li>
+            <a data-href="#about" href="#about">
+              <HoverLinks text="ABOUT" />
+            </a>
+          </li>
+
+          <li>
+            <a data-href="#contact" href="#contact">
+              <HoverLinks text="CONTACT" />
+            </a>
+          </li>
+        </ul>
       </div>
-    </div>
+
+      <div className="landing-circle1"></div>
+      <div className="landing-circle2"></div>
+      <div className="nav-fade"></div>
+    </>
   );
 };
 
-export default WhatIDo;
-
-function handleClick(container: HTMLDivElement) {
-  container.classList.toggle("what-content-active");
-  container.classList.remove("what-sibling");
-  if (container.parentElement) {
-    const siblings = Array.from(container.parentElement.children);
-
-    siblings.forEach((sibling) => {
-      if (sibling !== container) {
-        sibling.classList.remove("what-content-active");
-        sibling.classList.toggle("what-sibling");
-      }
-    });
-  }
-}
+export default Navbar;

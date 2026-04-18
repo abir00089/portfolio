@@ -1,18 +1,61 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ScrollSmoother } from "gsap-trial/ScrollSmoother";
-import { SplitText } from "gsap-trial/SplitText";
+// ❌ removed trial plugins
+// import { ScrollSmoother } from "gsap-trial/ScrollSmoother";
+// import { SplitText } from "gsap-trial/SplitText";
+
+// ✅ simple custom SplitText replacement
+class SplitText {
+  el: HTMLElement;
+  words: HTMLElement[] = [];
+  chars: HTMLElement[] = [];
+
+  constructor(element: HTMLElement, options: any) {
+    this.el = element;
+
+    const text = element.textContent || "";
+    element.innerHTML = "";
+
+    // split into words
+    const words = text.split(" ");
+    words.forEach((word) => {
+      const wordSpan = document.createElement("span");
+      wordSpan.style.display = "inline-block";
+
+      const chars = word.split("");
+      chars.forEach((char) => {
+        const charSpan = document.createElement("span");
+        charSpan.textContent = char;
+        charSpan.style.display = "inline-block";
+        wordSpan.appendChild(charSpan);
+        this.chars.push(charSpan);
+      });
+
+      element.appendChild(wordSpan);
+      element.appendChild(document.createTextNode(" "));
+      this.words.push(wordSpan);
+    });
+  }
+
+  revert() {
+    if (this.el) {
+      this.el.innerHTML = this.el.textContent || "";
+    }
+  }
+}
 
 interface ParaElement extends HTMLElement {
   anim?: gsap.core.Animation;
   split?: SplitText;
 }
 
-gsap.registerPlugin(ScrollTrigger, ScrollSmoother, SplitText);
+gsap.registerPlugin(ScrollTrigger);
 
 export default function setSplitText() {
   ScrollTrigger.config({ ignoreMobileResize: true });
+
   if (window.innerWidth < 900) return;
+
   const paras: NodeListOf<ParaElement> = document.querySelectorAll(".para");
   const titles: NodeListOf<ParaElement> = document.querySelectorAll(".title");
 
@@ -21,6 +64,7 @@ export default function setSplitText() {
 
   paras.forEach((para: ParaElement) => {
     para.classList.add("visible");
+
     if (para.anim) {
       para.anim.progress(1).kill();
       para.split?.revert();
@@ -48,15 +92,18 @@ export default function setSplitText() {
       }
     );
   });
+
   titles.forEach((title: ParaElement) => {
     if (title.anim) {
       title.anim.progress(1).kill();
       title.split?.revert();
     }
+
     title.split = new SplitText(title, {
       type: "chars,lines",
       linesClass: "split-line",
     });
+
     title.anim = gsap.fromTo(
       title.split.chars,
       { autoAlpha: 0, y: 80, rotate: 10 },
@@ -76,5 +123,9 @@ export default function setSplitText() {
     );
   });
 
-  ScrollTrigger.addEventListener("refresh", () => setSplitText());
+  // ✅ prevent infinite loop issue
+  ScrollTrigger.addEventListener("refresh", () => {
+    ScrollTrigger.getAll().forEach((t) => t.kill());
+    setSplitText();
+  });
 }

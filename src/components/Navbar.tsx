@@ -2,24 +2,31 @@ import { useEffect } from "react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import HoverLinks from "./HoverLinks";
 import { gsap } from "gsap";
-import { ScrollSmoother } from "gsap-trial/ScrollSmoother";
+// ❌ removed gsap-trial ScrollSmoother
 import "./styles/Navbar.css";
 
-gsap.registerPlugin(ScrollSmoother, ScrollTrigger);
-export let smoother: ScrollSmoother;
+gsap.registerPlugin(ScrollTrigger);
+
+// ✅ keep same export name so rest of your app doesn't break
+export let smoother: any;
 
 const Navbar = () => {
   useEffect(() => {
-    smoother = ScrollSmoother.create({
-      wrapper: "#smooth-wrapper",
-      content: "#smooth-content",
-      smooth: 0.8,
-      speed: 0.8,
-      effects: true,
-      autoResize: true,
-      ignoreMobileResize: true,
-    });
+    // ✅ fallback smoother (keeps your existing logic working)
+    smoother = {
+      scrollTop: (value: number) => {
+        window.scrollTo({ top: value, behavior: "smooth" });
+      },
+      scrollTo: (target: any, _smooth?: boolean, _position?: string) => {
+        const el = document.querySelector(target);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      },
+      paused: (_val: boolean) => {},
+    };
 
+    // keep your existing calls
     smoother.scrollTop(0);
     smoother.paused(true);
 
@@ -35,10 +42,14 @@ const Navbar = () => {
         }
       });
     });
+
     window.addEventListener("resize", () => {
-      ScrollSmoother.refresh(true);
+      // ❌ ScrollSmoother.refresh(true);
+      // ✅ replaced with:
+      ScrollTrigger.refresh();
     });
   }, []);
+
   return (
     <>
       <div className="header">
