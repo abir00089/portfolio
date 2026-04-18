@@ -1,11 +1,58 @@
-import { SplitText } from "gsap-trial/SplitText";
 import gsap from "gsap";
 import { smoother } from "../Navbar";
+
+// ❌ removed gsap-trial import
+// import { SplitText } from "gsap-trial/SplitText";
+
+// ✅ custom SplitText (same behavior, no trial)
+class SplitText {
+  elements: HTMLElement[] = [];
+  chars: HTMLElement[] = [];
+
+  constructor(target: string | string[] | HTMLElement[], options: any) {
+    let elements: HTMLElement[] = [];
+
+    if (typeof target === "string") {
+      elements = Array.from(document.querySelectorAll(target));
+    } else if (Array.isArray(target)) {
+      target.forEach((t) => {
+        if (typeof t === "string") {
+          elements.push(...Array.from(document.querySelectorAll(t)));
+        } else {
+          elements.push(t);
+        }
+      });
+    }
+
+    this.elements = elements;
+
+    elements.forEach((el) => {
+      const text = el.textContent || "";
+      el.innerHTML = "";
+
+      const chars = text.split("");
+      chars.forEach((char) => {
+        const span = document.createElement("span");
+        span.textContent = char;
+        span.style.display = "inline-block";
+        el.appendChild(span);
+        this.chars.push(span);
+      });
+    });
+  }
+
+  revert() {
+    this.elements.forEach((el) => {
+      el.innerHTML = el.textContent || "";
+    });
+  }
+}
 
 export function initialFX() {
   document.body.style.overflowY = "auto";
   smoother.paused(false);
   document.getElementsByTagName("main")[0].classList.add("main-active");
+
   gsap.to("body", {
     backgroundColor: "#0a0e17",
     duration: 0.5,
@@ -19,6 +66,7 @@ export function initialFX() {
       linesClass: "split-line",
     }
   );
+
   gsap.fromTo(
     landingText.chars,
     { opacity: 0, y: 80, filter: "blur(5px)" },
@@ -36,6 +84,7 @@ export function initialFX() {
   let TextProps = { type: "chars,lines", linesClass: "split-h2" };
 
   var landingText2 = new SplitText(".landing-h2-info", TextProps);
+
   gsap.fromTo(
     landingText2.chars,
     { opacity: 0, y: 80, filter: "blur(5px)" },
@@ -61,6 +110,7 @@ export function initialFX() {
       delay: 0.8,
     }
   );
+
   gsap.fromTo(
     [".header", ".icons-section", ".nav-fade"],
     { opacity: 0 },
@@ -82,6 +132,7 @@ export function initialFX() {
 
 function LoopText(Text1: SplitText, Text2: SplitText) {
   var tl = gsap.timeline({ repeat: -1, repeatDelay: 1 });
+
   const delay = 4;
   const delay2 = delay * 2 + 1;
 
