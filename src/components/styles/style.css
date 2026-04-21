@@ -4,17 +4,64 @@
   text-wrap: nowrap;
   overflow: hidden;
 }
+
 .hover-in {
   position: relative;
   transition: 0.3s;
 }
+
 .hover-in div {
   display: flex;
   position: absolute;
   top: 100%;
   left: 0;
 }
+
 .hover-link:hover .hover-in {
   transform: translateY(-100%);
   color: var(--accentColor);
+}
+
+/* ========================= */
+/* ✅ Fix for text overlap */
+/* ========================= */
+
+.split-line {
+  display: block;
+  overflow: hidden;
+  width: 100%; /* ✅ ensures proper line wrapping */
+}
+
+.split-line span {
+  display: inline-block;
+  will-change: transform, opacity; /* ✅ smoother animations */
+}
+
+.para,
+.title {
+  line-height: 1.4;
+  overflow: hidden;
+  word-break: break-word; /* ✅ prevents text overflow */
+}
+
+/* ========================= */
+/* ✅ Smooth scroll (replacement for GSAP smoother) */
+/* ========================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ========================= */
+/* ✅ Extra stability fixes */
+/* ========================= */
+
+* {
+  box-sizing: border-box; /* ✅ prevents layout breaking */
+}
+
+/* prevent unexpected text collapsing */
+.para span,
+.title span {
+  display: inline-block;
 }

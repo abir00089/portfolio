@@ -9,18 +9,21 @@ class SplitText {
   el: HTMLElement;
   words: HTMLElement[] = [];
   chars: HTMLElement[] = [];
+  originalHTML: string = ""; // ✅ store original content
 
   constructor(element: HTMLElement, options: any) {
     this.el = element;
 
     const text = element.textContent || "";
+    this.originalHTML = element.innerHTML; // ✅ preserve original
     element.innerHTML = "";
 
-    // split into words
+    // ✅ improved split (word + char safe spacing)
     const words = text.split(" ");
     words.forEach((word) => {
       const wordSpan = document.createElement("span");
       wordSpan.style.display = "inline-block";
+      wordSpan.style.whiteSpace = "pre";
 
       const chars = word.split("");
       chars.forEach((char) => {
@@ -31,15 +34,15 @@ class SplitText {
         this.chars.push(charSpan);
       });
 
-      element.appendChild(wordSpan);
-      element.appendChild(document.createTextNode(" "));
+      this.el.appendChild(wordSpan);
+      this.el.appendChild(document.createTextNode(" "));
       this.words.push(wordSpan);
     });
   }
 
   revert() {
     if (this.el) {
-      this.el.innerHTML = this.el.textContent || "";
+      this.el.innerHTML = this.originalHTML; // ✅ proper revert
     }
   }
 }
@@ -53,6 +56,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function setSplitText() {
   ScrollTrigger.config({ ignoreMobileResize: true });
+
+  // ✅ clean old triggers before creating new ones
+  ScrollTrigger.getAll().forEach((t) => t.kill());
 
   if (window.innerWidth < 900) return;
 
@@ -123,9 +129,8 @@ export default function setSplitText() {
     );
   });
 
-  // ✅ prevent infinite loop issue
-  ScrollTrigger.addEventListener("refresh", () => {
-    ScrollTrigger.getAll().forEach((t) => t.kill());
-    setSplitText();
-  });
+  // ✅ slight delay helps layout settle before refresh
+  setTimeout(() => {
+    ScrollTrigger.refresh();
+  }, 50);
 }

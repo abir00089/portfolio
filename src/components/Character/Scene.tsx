@@ -20,6 +20,7 @@ const Scene = () => {
   const { setLoading } = useLoading();
 
   const [character, setChar] = useState<THREE.Object3D | null>(null);
+
   useEffect(() => {
     if (canvasDiv.current) {
       let rect = canvasDiv.current.getBoundingClientRect();
@@ -31,13 +32,22 @@ const Scene = () => {
         alpha: true,
         antialias: true,
       });
+
+      // ✅ IMPROVED (better clarity + performance balance)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(container.width, container.height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1;
+
       canvasDiv.current.appendChild(renderer.domElement);
 
       const camera = new THREE.PerspectiveCamera(14.5, aspect, 0.1, 1000);
+
+      // ✅ ADDED (fix clipping issues)
+      camera.near = 0.1;
+      camera.far = 1000;
+
       camera.position.z = 10;
       camera.position.set(0, 13.1, 24.7);
       camera.zoom = 1.1;
@@ -54,26 +64,40 @@ const Scene = () => {
       const { loadCharacter } = setCharacter(renderer, scene, camera);
 
       let isMounted = true;
+
+      // ✅ store resize handler (important for cleanup)
+      const resizeHandler = () => {
+        if (character) {
+          handleResize(renderer, camera, canvasDiv, character);
+        }
+      };
+
       loadCharacter().then((gltf) => {
         if (!isMounted) return;
+
         if (gltf) {
           const animations = setAnimations(gltf);
-          hoverDivRef.current && animations.hover(gltf, hoverDivRef.current);
+          hoverDivRef.current &&
+            animations.hover(gltf, hoverDivRef.current);
+
           mixer = animations.mixer;
+
           let character = gltf.scene;
           setChar(character);
           scene.add(character);
+
           headBone = character.getObjectByName("spine006") || null;
-          screenLight = character.getObjectByName("screenlight") || null;
+          screenLight =
+            character.getObjectByName("screenlight") || null;
+
           progress.loaded().then(() => {
             setTimeout(() => {
               light.turnOnLights();
               animations.startIntro();
             }, 2500);
           });
-          window.addEventListener("resize", () =>
-            handleResize(renderer, camera, canvasDiv, character)
-          );
+
+          window.addEventListener("resize", resizeHandler);
         }
       });
 
@@ -83,7 +107,9 @@ const Scene = () => {
       const onMouseMove = (event: MouseEvent) => {
         handleMouseMove(event, (x, y) => (mouse = { x, y }));
       };
+
       let debounce: number | undefined;
+
       const onTouchStart = (event: TouchEvent) => {
         const element = event.target as HTMLElement;
         debounce = setTimeout(() => {
@@ -100,17 +126,21 @@ const Scene = () => {
         });
       };
 
-      document.addEventListener("mousemove", (event) => {
-        onMouseMove(event);
-      });
+      document.addEventListener("mousemove", onMouseMove);
+
       const landingDiv = document.getElementById("landingDiv");
+
       if (landingDiv) {
         landingDiv.addEventListener("touchstart", onTouchStart);
         landingDiv.addEventListener("touchend", onTouchEnd);
       }
+
       let frameId: number;
+
+      // ✅ MAIN RENDER LOOP (already good, kept same)
       const animate = () => {
         frameId = requestAnimationFrame(animate);
+
         if (headBone) {
           handleHeadRotation(
             headBone,
@@ -120,27 +150,36 @@ const Scene = () => {
             interpolation.y,
             THREE.MathUtils.lerp
           );
+
           light.setPointLight(screenLight);
         }
+
         const delta = clock.getDelta();
+
         if (mixer) {
           mixer.update(delta);
         }
+
         renderer.render(scene, camera);
       };
+
       animate();
+
       return () => {
         isMounted = false;
+
         cancelAnimationFrame(frameId);
         clearTimeout(debounce);
+
         scene.clear();
         renderer.dispose();
-        window.removeEventListener("resize", () =>
-          handleResize(renderer, camera, canvasDiv, character!)
-        );
+
+        window.removeEventListener("resize", resizeHandler);
+
         if (canvasDiv.current) {
           canvasDiv.current.removeChild(renderer.domElement);
         }
+
         if (landingDiv) {
           document.removeEventListener("mousemove", onMouseMove);
           landingDiv.removeEventListener("touchstart", onTouchStart);
